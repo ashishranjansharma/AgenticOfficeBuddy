@@ -1,7 +1,8 @@
 {
   "dependencies": ["."],
   "graphs": {
-    "agentic_rag": "./src/officebuddy/agents/agentic_rag.py:graph"
+    "agentic_rag": "./src/officebuddy/agents/agentic_rag.py:graph",
+    "advanced_rag": "./src/officebuddy/agents/advanced_rag_agent.py:graph"
   },
   "env": ".env"
 }
