@@ -1,5 +1,5 @@
 """
-Agentic RAG Implementation for LangGraph Dev Demo
+Agentic RAG Implementation for LangGraph Dev Assignment
 
 This implementation demonstrates an agentic RAG system that:
 1. Retrieves documents from a vector store

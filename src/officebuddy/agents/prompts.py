@@ -3,9 +3,23 @@ System Prompts Configuration for RAG Agents
 
 This module contains all system prompts used by the RAG agents.
 Centralizing prompts here makes them easier to manage, update, and version.
+
+Usage:
+    from prompts import AGENT_SYSTEM_PROMPT, PromptTemplates
+
+    # Use static prompts
+    messages = [SystemMessage(content=AGENT_SYSTEM_PROMPT)]
+
+    # Use dynamic templates
+    prompt = PromptTemplates.grader_prompt(context, question)
 """
 
+# ============================================================================
+# Static System Prompts
+# ============================================================================
+
 # Main Agent System Prompt
+# Defines the behavior and capabilities of the primary RAG agent
 AGENT_SYSTEM_PROMPT = """You are an intelligent research assistant with access to a document retrieval system.
 
 Your capabilities:
@@ -22,6 +36,7 @@ Guidelines:
 """
 
 # Document Grader System Prompt
+# Configures the model to assess relevance of retrieved documents
 GRADER_SYSTEM_PROMPT = """You are a document relevance grader.
 
 Your task is to assess whether a retrieved document is relevant to a user's question.
@@ -35,6 +50,7 @@ Guidelines:
 """
 
 # Query Rewriter System Prompt
+# Guides the model in reformulating queries for better retrieval
 REWRITER_SYSTEM_PROMPT = """You are a query optimization specialist.
 
 Your task is to reformulate user questions to improve document retrieval.
@@ -48,6 +64,7 @@ Guidelines:
 """
 
 # Answer Generator System Prompt
+# Instructs the model on synthesizing answers from retrieved context
 ANSWER_GENERATOR_SYSTEM_PROMPT = """You are a knowledgeable AI assistant specializing in synthesizing information.
 
 Your task is to generate clear, accurate answers based on retrieved context.
@@ -61,13 +78,29 @@ Guidelines:
 """
 
 
-# Prompt Templates for Dynamic Content
+# ============================================================================
+# Dynamic Prompt Templates
+# ============================================================================
 class PromptTemplates:
-    """Template strings for constructing prompts with dynamic content."""
+    """
+    Dynamic prompt templates for constructing prompts with variable content.
+
+    This class provides static methods to generate prompts that require
+    dynamic content insertion, such as user questions and retrieved documents.
+    """
 
     @staticmethod
     def grader_prompt(context: str, question: str) -> str:
-        """Template for grading document relevance."""
+        """
+        Generate a prompt for document relevance grading.
+
+        Args:
+            context: The retrieved document text to be graded
+            question: The user's original question
+
+        Returns:
+            str: Formatted prompt for the grader model
+        """
         return f"""Document: {context}
 
 Question: {question}
@@ -76,14 +109,31 @@ Is this document relevant to answering the question? Consider both keyword match
 
     @staticmethod
     def rewriter_prompt(question: str) -> str:
-        """Template for rewriting queries."""
+        """
+        Generate a prompt for query rewriting.
+
+        Args:
+            question: The original user question to be reformulated
+
+        Returns:
+            str: Formatted prompt for the rewriter model
+        """
         return f"""Original question: {question}
 
 Please reformulate this question to improve document retrieval. Focus on the key concepts and intent."""
 
     @staticmethod
     def answer_prompt(question: str, context: str) -> str:
-        """Template for generating answers."""
+        """
+        Generate a prompt for answer generation.
+
+        Args:
+            question: The user's question to be answered
+            context: Retrieved document context to base the answer on
+
+        Returns:
+            str: Formatted prompt for the answer generation model
+        """
         return f"""Question: {question}
 
 Context: {context}

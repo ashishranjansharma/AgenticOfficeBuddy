@@ -35,24 +35,56 @@ from .prompts import (
     PromptTemplates,
 )
 
-# Load environment variables
+# ============================================================================
+# Environment Setup
+# ============================================================================
+
+# Load environment variables from .env file
 load_dotenv()
 
-# Configuration
+# Configure user agent for web scraping
 os.environ["USER_AGENT"] = "AdvancedRAGAgent/1.0"
 
 
+# ============================================================================
 # State Definition
+# ============================================================================
+
 class AgentState(TypedDict):
-    """State for the advanced RAG agent."""
+    """
+    State schema for the advanced RAG agent.
+
+    Attributes:
+        messages: List of conversation messages with automatic message handling
+        documents: Retrieved documents from the vector store
+        is_relevant: Boolean indicating if retrieved documents are relevant
+    """
     messages: Annotated[list, add_messages]
     documents: list
     is_relevant: bool
 
 
-# Document Processing
+# ============================================================================
+# Document Processing Functions
+# ============================================================================
+
 def load_and_process_documents():
-    """Load documents from URLs and split them into chunks."""
+    """
+    Load documents from web URLs and process them into chunks.
+
+    This function:
+    1. Loads blog posts from specified URLs using WebBaseLoader
+    2. Flattens the list of loaded documents
+    3. Splits documents into chunks using RecursiveCharacterTextSplitter
+    4. Uses tiktoken encoding for accurate token counting
+
+    Returns:
+        list: List of processed document chunks ready for embedding
+
+    Note:
+        - Chunk size: 250 tokens with 75 token overlap
+        - URLs point to Lilian Weng's blog posts on AI topics
+    """
     urls = [
         "https://lilianweng.github.io/posts/2024-11-28-reward-hacking/",
         "https://lilianweng.github.io/posts/2024-07-07-hallucination/",
@@ -71,7 +103,21 @@ def load_and_process_documents():
 
 
 def create_retriever():
-    """Create a vector store and retriever from documents."""
+    """
+    Create a vector store and retriever tool from processed documents.
+
+    This function:
+    1. Loads and processes documents into chunks
+    2. Creates an in-memory vector store with OpenAI embeddings
+    3. Configures retriever to return top 4 most relevant documents
+    4. Wraps retriever in a LangChain tool for agent use
+
+    Returns:
+        Tool: A retriever tool that can be bound to the agent for document search
+
+    Note:
+        Uses OpenAI's text-embedding-ada-002 model for embeddings
+    """
     doc_splits = load_and_process_documents()
 
     vectorstore = InMemoryVectorStore.from_documents(
@@ -88,30 +134,69 @@ def create_retriever():
     return retriever_tool
 
 
-# Models
+# ============================================================================
+# Model Initialization Functions
+# ============================================================================
+
 def get_agent_model():
-    """Get the main agent model with system prompt."""
+    """
+    Initialize the main agent model.
+
+    Returns:
+        ChatOpenAI: GPT-4o model with temperature=0 for deterministic responses
+    """
     return ChatOpenAI(model="gpt-4o", temperature=0)
 
 
 def get_grader_model():
-    """Get the grader model."""
+    """
+    Initialize the document grader model.
+
+    Returns:
+        ChatOpenAI: GPT-4o model with temperature=0 for consistent grading
+    """
     return ChatOpenAI(model="gpt-4o", temperature=0)
 
 
 def get_rewriter_model():
-    """Get the query rewriter model."""
+    """
+    Initialize the query rewriter model.
+
+    Returns:
+        ChatOpenAI: GPT-4o model with temperature=0 for deterministic rewrites
+    """
     return ChatOpenAI(model="gpt-4o", temperature=0)
 
 
 def get_answer_model():
-    """Get the answer generation model."""
+    """
+    Initialize the answer generation model.
+
+    Returns:
+        ChatOpenAI: GPT-4o model with temperature=0.3 for slightly creative answers
+    """
     return ChatOpenAI(model="gpt-4o", temperature=0.3)
 
 
-# Node Functions
+# ============================================================================
+# Graph Node Functions
+# ============================================================================
+
 def agent_node(state: AgentState):
-    """Main agent node that decides whether to retrieve documents or respond directly."""
+    """
+    Main agent node that decides whether to retrieve documents or respond directly.
+
+    This node:
+    1. Adds system prompt to message history if not present
+    2. Binds the retriever tool to the model
+    3. Invokes the model to decide on tool use or direct response
+
+    Args:
+        state: Current agent state containing messages and metadata
+
+    Returns:
+        dict: Updated state with agent's response message
+    """
     retriever_tool = create_retriever()
     model = get_agent_model()
 
@@ -126,7 +211,24 @@ def agent_node(state: AgentState):
 
 
 def grade_documents_node(state: AgentState) -> Literal["generate_answer", "rewrite_question"]:
-    """Grade the relevance of retrieved documents."""
+    """
+    Grade the relevance of retrieved documents to the user's question.
+
+    This node:
+    1. Extracts the user question from message history
+    2. Gets the retrieved document context
+    3. Uses a grader model to assess relevance
+    4. Returns routing decision based on relevance score
+
+    Args:
+        state: Current agent state with messages and retrieved documents
+
+    Returns:
+        str: Either "generate_answer" if relevant, or "rewrite_question" if not
+
+    Note:
+        Uses structured output to ensure consistent binary yes/no grading
+    """
     messages = state["messages"]
 
     # Extract the user question and retrieved context
@@ -143,7 +245,7 @@ def grade_documents_node(state: AgentState) -> Literal["generate_answer", "rewri
     else:
         return "rewrite_question"
 
-    # Grade the documents
+    # Grade the documents using structured output
     class GradeDocuments(BaseModel):
         """Binary score for relevance check."""
         binary_score: str = Field(
@@ -167,7 +269,23 @@ def grade_documents_node(state: AgentState) -> Literal["generate_answer", "rewri
 
 
 def rewrite_question_node(state: AgentState):
-    """Rewrite the user question to improve retrieval."""
+    """
+    Rewrite the user question to improve document retrieval.
+
+    This node:
+    1. Extracts the original user question
+    2. Uses a rewriter model to reformulate the query
+    3. Returns the improved question for another retrieval attempt
+
+    Args:
+        state: Current agent state with message history
+
+    Returns:
+        dict: Updated state with rewritten question as new user message
+
+    Note:
+        Helps recover from failed retrievals by reformulating queries
+    """
     messages = state["messages"]
 
     # Find the original user question
@@ -192,7 +310,23 @@ def rewrite_question_node(state: AgentState):
 
 
 def generate_answer_node(state: AgentState):
-    """Generate the final answer based on relevant documents."""
+    """
+    Generate the final answer based on relevant documents.
+
+    This node:
+    1. Extracts the user question and retrieved context
+    2. Uses an answer generation model with specific system prompt
+    3. Synthesizes a clear, concise answer from the context
+
+    Args:
+        state: Current agent state with question and retrieved documents
+
+    Returns:
+        dict: Updated state with generated answer message
+
+    Note:
+        Uses temperature=0.3 for slightly more natural responses
+    """
     messages = state["messages"]
 
     # Extract question and context
@@ -218,9 +352,33 @@ def generate_answer_node(state: AgentState):
     return {"messages": [response]}
 
 
+# ============================================================================
 # Graph Construction
+# ============================================================================
+
 def create_agent_graph():
-    """Create and compile the LangGraph workflow."""
+    """
+    Create and compile the LangGraph workflow for the RAG agent.
+
+    This function:
+    1. Initializes the retriever tool
+    2. Creates a StateGraph with all necessary nodes
+    3. Defines conditional edges for routing logic
+    4. Compiles the graph into an executable workflow
+
+    Returns:
+        CompiledGraph: Executable LangGraph workflow
+
+    Workflow:
+        START -> agent -> [tools | END]
+                   ↓
+              retrieve -> grade_documents -> [generate_answer | rewrite_question]
+                                                    ↓                ↓
+                                                   END          -> agent
+
+    Note:
+        The graph implements adaptive RAG with query rewriting on failed retrieval
+    """
     retriever_tool = create_retriever()
 
     workflow = StateGraph(AgentState)
@@ -254,10 +412,15 @@ def create_agent_graph():
     workflow.add_edge("generate_answer", END)
     workflow.add_edge("rewrite_question", "agent")
 
-    # Compile the graph
+    # Compile the graph into executable workflow
     graph = workflow.compile()
     return graph
 
 
-# Create the graph instance for LangGraph dev
+# ============================================================================
+# Module Exports
+# ============================================================================
+
+# Create the graph instance for LangGraph dev server
+# This is the main entry point when running with `langgraph dev`
 graph = create_agent_graph()
