@@ -3,7 +3,8 @@
   "graphs": {
     "agentic_rag": "./src/officebuddy/agents/agentic_rag.py:graph",
     "advanced_rag": "./src/officebuddy/agents/advanced_rag_agent.py:graph",
-    "supervisor_rag": "./src/officebuddy/agents/supervisor_rag_agent.py:graph"
+    "supervisor_rag": "./src/officebuddy/agents/supervisor_rag_agent.py:graph",
+    "multi_agent_rag": "./src/officebuddy/agents/multi_agent_rag.py:graph"
   },
   "env": ".env"
 }
