@@ -5,7 +5,8 @@
     "advanced_rag": "./src/officebuddy/agents/advanced_rag_agent.py:graph",
     "supervisor_rag": "./src/officebuddy/agents/supervisor_rag_agent.py:graph",
     "multi_agent_rag": "./src/officebuddy/agents/multi_agent_rag.py:graph",
-    "langgraph_supervisor": "./src/officebuddy/agents/langgraph_supervisor_rag.py:graph"
+    "langgraph_supervisor": "./src/officebuddy/agents/langgraph_supervisor_rag.py:graph",
+    "official_supervisor": "./src/officebuddy/agents/official_supervisor_rag.py:graph"
   },
   "env": ".env"
 }
