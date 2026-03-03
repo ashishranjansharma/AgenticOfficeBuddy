@@ -52,5 +52,8 @@ Thumbs.db
 # LangSmith
 .langsmith/
 
+# LangGraph
+.langgraph_api/
+
 # Logs
 *.log
