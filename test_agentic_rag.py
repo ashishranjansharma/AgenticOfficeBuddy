@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 def test_imports():
     """Test that all required modules can be imported."""
     try:
-        from src.officebuddy.agents import agentic_rag
+        from src.officebuddy.agents import agentic_rag  # noqa: F401
         print("✓ Successfully imported agentic_rag module")
         return True
     except ImportError as e:

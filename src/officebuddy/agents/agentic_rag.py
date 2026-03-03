@@ -11,7 +11,6 @@ Based on the Agentic_RAG.ipynb notebook.
 """
 
 import os
-import getpass
 from typing import Literal
 from pydantic import BaseModel, Field
 
@@ -21,13 +20,11 @@ from langchain_core.vectorstores import InMemoryVectorStore
 from langchain_openai import OpenAIEmbeddings
 from langchain_core.tools import create_retriever_tool
 from langchain.chat_models import init_chat_model
-from langchain_core.messages import convert_to_messages
 
 from langgraph.graph import StateGraph, START, END, MessagesState
 from langgraph.prebuilt import ToolNode, tools_condition
 
 
-import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
